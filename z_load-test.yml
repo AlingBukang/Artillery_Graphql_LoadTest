@@ -1,0 +1,111 @@
+config:
+  target: "https://url.com"
+  plugins:
+  #   metrics-by-endpoint:
+  #     useOnlyRequestNames: true  # Group metrics by request name rather than URL
+    publish-metrics:
+      - type: honeycomb
+        apiKey: "{{ $processEnvironment.apiKeyHoneycomb }}"
+        dataset: "web load test"
+        enabled: true
+        sampleRate: 1
+  http:
+    timeout: 10
+    pool: 10  # HTTP requests from all virtual users will be sent over the same ten connections.    
+    maxSockets: 5 # Set a max of five TCP connections per virtual user.
+    extendedMetrics: true
+  environments: #NOTE: duration is in seconds
+    fixed-load:
+      phases:  
+        - duration: 1 # in seconds
+          arrivalCount: 1
+          name: "Fixed Load"
+
+  processor: "./call.js"
+  defaults:
+      headers:
+        content-type: "application/json"
+scenarios:
+  - name: Mock with delay
+    flow:
+      - function: "generateRandomData"
+      - post:
+          url: "/graphql?delayMs={{ waitTime }}"
+          name: "Display User CPD"
+          beforeRequest: "setJSONBody"
+          headers:
+            cookie: "{{ cookie }}" 
+          json:
+            query:
+              "{{ getUserCPD }}"
+      - log: "Sent query GetUserCpd with mocked delay"
+
+
+  - name: Write and Publish Insight
+    flow:
+      - function: "generateRandomData"
+      - post:
+          url: "/graphql"
+          name: "Write a new Insight"
+          beforeRequest: "setJSONBody"
+          headers:
+            cookie: "{{ cookie }}" 
+          json:
+            query:
+              "{{ saveDraftInsight }}"
+            variables:
+              insight:
+                title: "{{ randomTitle }}"
+                data: "{\"blocks\":[{\"type\":\"paragraph\",\"data\":{\"text\":\" {{ randomSentence }} \",\"indent\":0}}]}"
+          capture:
+            json: "$.data.saveDraftInsight.id"
+            as: "insightID"
+      - log: "VU {{ vuId }} sent write new Insight with id {{ insightID }}"     
+      - think: 3                 
+
+      - post:
+          url: "/graphql"
+          name: "Publish an Insight"
+          beforeRequest: "setJSONBody"
+          headers:
+            cookie: "{{ cookie }}" 
+          json:
+            query:
+              "{{ publishInsight }}"
+            variables:
+              payload: 
+                id: "{{ insightID }}"
+                overview: "{{ randomOverview }}"
+                coverUrl: null
+                tags: "{{ randomWord }}"       
+      - log: "VU {{ vuId }} sent publish draft Insight with id {{ insightID }}"       
+      - think: 3
+
+      - post:
+          url: "/graphql"
+          name: "Display An Insight"
+          beforeRequest: "setJSONBody"
+          headers:
+            cookie: "{{ cookie }}"
+          json:
+            query:
+              "{{ getInsightById }}"
+            variables:
+              id: "{{ insightID }}"
+      - log: "Sent query Insight by id: {{ insightID }}"
+      - think: 3
+
+      - post:
+          url: "/graphql"
+          name: "Add Insight Comment"
+          beforeRequest: "setJSONBody"
+          headers:
+            cookie: "{{ cookie }}"
+          json:
+            query:
+              "{{ addInsightComment }}"
+            variables:
+              insightComment:
+                insightId: "{{ insightID }}"
+                content: "{{ randomSentence }}"
+      - log: "Sent comment to Insight id: {{ insightID }}"

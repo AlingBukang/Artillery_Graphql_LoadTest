@@ -1,0 +1,15 @@
+config:
+  target: "wss://url:4999/socket.io/?EIO=4&transport=websocket"
+  processor: "./socket-helper.js"
+  phases:
+    - duration: 20
+      arrivalRate: 10
+
+#{"strategy":"session","credentials":{"auth0Id":"auth0|"}}
+scenarios:
+  - engine: ws
+    flow:
+      - connect:
+          function: "connectHandler"
+      - function: "createNotificationObject"
+      - send: "{{ data }}"

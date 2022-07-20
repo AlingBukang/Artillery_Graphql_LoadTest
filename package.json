@@ -1,0 +1,24 @@
+{
+  "name": "medworld-web-load",
+  "version": "0.0.1",
+  "description": "A load generator function implementation",
+  "private": true,
+  "scripts": {
+    "login-load": "artillery run z_login-load-test.yml -o ./reports/z_login-load-test.json",
+    "fixed-load": "artillery run -e fixed-load z_uat-load-test.yml -o ./reports/uat-load-test-fixed.json && artillery report ./reports/uat-load-test-fixed.json --output ./reports/uat-load-test-fixed.html",
+    "low-load": "artillery run -e low-load z_uat-load-test.yml -o ./reports/uat-load-test-low.json && artillery report ./reports/uat-load-test-low.json --output ./reports/uat-load-test-low.html",
+    "max-load": "artillery run -e max-load z_uat-load-test.yml -o ./reports/uat-load-test-max.json && artillery report ./reports/uat-load-test-max.json --output ./reports/uat-load-test-max.html"
+  },
+
+  "dependencies": {
+    "artillery": "^2.0.0-16",
+    "artillery-engine-playwright": "^0.0.6",
+    "artillery-plugin-metrics-by-endpoint": "^1.0.2",
+    "artillery-plugin-publish-metrics": "^2.0.0",
+    "axios": "^0.27.2",
+    "lokijs": "^1.5.12"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^6.3.1"
+  }
+}
