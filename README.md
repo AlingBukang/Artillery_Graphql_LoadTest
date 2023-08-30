@@ -1,4 +1,4 @@
-# Medworld-LoadTest
+# Web/Graphql LoadTest
 * [Learn Artillery](https://www.artillery.io/)
 
 ## Required variables
